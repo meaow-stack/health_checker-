@@ -99,9 +99,9 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
   
   useEffect(() => {
     // Automatically request location on mount if not already set
-    if (!location && !error && !loadingLocation) {
-       // requestLocation(); // Option: Auto-request. Let's make it manual for now.
-    }
+    // if (!location && !error && !loadingLocation) {
+    //    requestLocation(); // Option: Auto-request. Let's make it manual for now.
+    // }
   }, [location, error, loadingLocation, requestLocation]);
 
 
