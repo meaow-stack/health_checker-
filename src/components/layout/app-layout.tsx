@@ -21,7 +21,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Home,
   BotMessageSquare,
-  ClipboardSearch,
+  ClipboardCheck,
   Activity,
   BookOpenText,
   LogIn,
@@ -33,7 +33,7 @@ import {
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/chatbot', label: 'Symptom Chatbot', icon: BotMessageSquare },
-  { href: '/prediction', label: 'Disease Prediction', icon: ClipboardSearch },
+  { href: '/prediction', label: 'Disease Prediction', icon: ClipboardCheck },
   { href: '/tracking', label: 'Symptom Tracking', icon: Activity },
   { href: '/advice', label: 'Health Advice', icon: BookOpenText },
 ];

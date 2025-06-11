@@ -1,8 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/common/page-header";
 import Link from "next/link";
-import { BotMessageSquare, ClipboardSearch, Activity, BookOpenText, HeartPulse } from "lucide-react";
+import { BotMessageSquare, ClipboardCheck, Activity, BookOpenText, HeartPulse } from "lucide-react";
 import Image from "next/image";
 
 export default function HomePage() {
@@ -22,7 +23,7 @@ export default function HomePage() {
           linkText="Try the Chatbot"
         />
         <FeatureCard
-          icon={<ClipboardSearch className="h-10 w-10 text-primary" />}
+          icon={<ClipboardCheck className="h-10 w-10 text-primary" />}
           title="Disease Prediction"
           description="Get an AI-powered assessment of possible diseases based on your reported symptoms."
           link="/prediction"
