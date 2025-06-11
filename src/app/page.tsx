@@ -59,7 +59,7 @@ export default function HomePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-8"> {/* Increased gap for better spacing */}
             <div className="flex-1 space-y-4">
               <p className="text-foreground/80">
                 Navigate through our features to gain a better understanding of your health. 
@@ -80,7 +80,16 @@ export default function HomePage() {
                  </Link>
               </div>
             </div>
-            {/* The div containing the placeholder image has been removed */}
+            <div className="flex-1 hidden md:block w-full md:w-auto"> {/* Ensure image container takes space */}
+              <Image
+                src="https://placehold.co/600x400.png"
+                alt="Abstract health and technology"
+                data-ai-hint="health technology"
+                width={600}
+                height={400}
+                className="rounded-lg shadow-md object-cover w-full h-auto" // Added object-cover and w-full
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
