@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -27,8 +27,18 @@ import {
   LogIn,
   UserPlus,
   HeartPulse,
-  Settings,
+  LogOut,
+  UserCircle,
+  MessageSquareQuote,
+  Info,
+  BadgeHelp,
+  Mail,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -38,13 +48,47 @@ const navItems = [
   { href: '/advice', label: 'Health Advice', icon: BookOpenText },
 ];
 
-const authNavItems = [
+const unauthenticatedNavItems = [
   { href: '/auth/login', label: 'Login', icon: LogIn },
   { href: '/auth/signup', label: 'Sign Up', icon: UserPlus },
 ];
 
+const footerNavItems = [
+  { href: '/about', label: 'About Us', icon: Info },
+  { href: '/contact', label: 'Contact Us', icon: Mail },
+  { href: '/feedback', label: 'Feedback', icon: MessageSquareQuote },
+];
+
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        title: 'Logout Failed',
+        description: error.message || 'Could not log out.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length === 1) return names[0]!.charAt(0).toUpperCase();
+    return names[0]!.charAt(0).toUpperCase() + names[names.length - 1]!.charAt(0).toUpperCase();
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -60,48 +104,94 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
-                  <Link href={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname === item.href}
-                      tooltip={item.label}
-                      className="justify-start"
-                    >
+                  <SidebarMenuButton
+                     asChild
+                     isActive={pathname === item.href}
+                     tooltip={item.label}
+                     className="justify-start"
+                  >
+                    <Link href={item.href}>
                       <item.icon className="h-5 w-5" />
                       <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </Link>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarContent>
         </ScrollArea>
         <Separator />
-        <SidebarFooter className="p-4">
+        <SidebarContent className="flex-grow-0">
           <SidebarMenu>
-            {authNavItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <Link href={item.href}>
+             {footerNavItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                   <SidebarMenuButton
+                     asChild
+                     isActive={pathname === item.href}
+                     tooltip={item.label}
+                     className="justify-start"
+                     variant="ghost"
+                     size="sm"
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+             ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <Separator />
+        <SidebarFooter className="p-4">
+          {loading ? (
+            <div className="flex items-center space-x-2">
+               <UserCircle className="h-5 w-5 text-muted-foreground" />
+               <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : user ? (
+            <>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                   <SidebarMenuButton tooltip={user.displayName || user.email || "User Profile"} className="justify-start h-auto py-2">
+                      <Avatar className="h-7 w-7 mr-2">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {getInitials(user.displayName || user.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col items-start">
+                        <span className="text-sm font-medium">{user.displayName || 'User'}</span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">{user.email}</span>
+                      </div>
+                   </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleLogout} tooltip="Logout" className="justify-start text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </>
+          ) : (
+            <SidebarMenu>
+              {unauthenticatedNavItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
+                    asChild
                     isActive={pathname === item.href}
                     tooltip={item.label}
                     className="justify-start"
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
+                    <Link href={item.href}>
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </Link>
                   </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-            {/* Example for a settings button - can be implemented later */}
-            {/* <SidebarMenuItem>
-              <Link href="/settings">
-                  <SidebarMenuButton isActive={pathname === "/settings"} tooltip="Settings" className="justify-start">
-                      <Settings className="h-5 w-5" />
-                      <span>Settings</span>
-                  </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem> */}
-          </SidebarMenu>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          )}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

@@ -10,10 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { symptomChatbot, type SymptomChatbotOutput } from '@/ai/flows/symptom-chatbot';
-import { Bot, User, Loader2, BotMessageSquare } from 'lucide-react';
+import { Bot, User, Loader2, BotMessageSquare, ShieldQuestion } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+
 
 const SymptomFormSchema = z.object({
   symptoms: z.string().min(5, { message: 'Please describe your symptoms in at least 5 characters.' }),
@@ -30,6 +33,7 @@ interface Message {
 export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [storePromptsAnonymously, setStorePromptsAnonymously] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +50,11 @@ export default function SymptomChatbotClient() {
     setMessages((prev) => [...prev, userMessage]);
     form.reset();
 
+    // Log the privacy preference (for now)
+    console.log('User preference to store prompts anonymously:', storePromptsAnonymously);
+
     try {
+      // TODO: In a future step, pass `storePromptsAnonymously` to the AI flow
       const result: SymptomChatbotOutput = await symptomChatbot({ symptoms: data.symptoms });
       const aiMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: result.potentialCauses };
       setMessages((prev) => [...prev, aiMessage]);
@@ -142,6 +150,17 @@ export default function SymptomChatbotClient() {
                 </FormItem>
               )}
             />
+            <div className="flex items-center space-x-2 my-4 p-3 border rounded-md bg-background">
+              <Checkbox 
+                id="anonymous-prompts" 
+                checked={storePromptsAnonymously}
+                onCheckedChange={(checked) => setStorePromptsAnonymously(checked as boolean)}
+              />
+              <Label htmlFor="anonymous-prompts" className="text-sm font-normal text-muted-foreground leading-snug">
+                Allow HealthWise Assistant to store my prompts anonymously to help improve the service. Your personal data is never stored.
+              </Label>
+               <ShieldQuestion className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-auto" />
+            </div>
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BotMessageSquare className="mr-2 h-4 w-4" />}
               Send Symptoms

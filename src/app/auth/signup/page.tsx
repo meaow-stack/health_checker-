@@ -11,6 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import Link from 'next/link';
 import { UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 const SignupFormSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
@@ -19,13 +22,14 @@ const SignupFormSchema = z.object({
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"], // path of error
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof SignupFormSchema>;
 
 export default function SignupPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(SignupFormSchema),
     defaultValues: {
@@ -36,13 +40,25 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = (data: SignupFormValues) => {
-    // Placeholder for actual signup logic
-    console.log('Signup data:', data);
-    toast({
-      title: 'Signup Attempted (Placeholder)',
-      description: 'Signup functionality is not yet implemented.',
-    });
+  const onSubmit = async (data: SignupFormValues) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: data.fullName });
+      }
+      toast({
+        title: 'Account Created!',
+        description: 'Welcome to HealthWise Assistant.',
+      });
+      router.push('/'); // Redirect to homepage or dashboard
+    } catch (error: any) {
+      console.error('Signup Error:', error);
+      toast({
+        title: 'Signup Failed',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
