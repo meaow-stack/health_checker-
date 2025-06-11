@@ -30,27 +30,23 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.0902, lng: -95.7129 }); // Default to US center
 
-  // Define icons inside the component.
-  // This ensures that `window.google` is more likely to be available
-  // when these objects are created, especially by the time they are used by Marker components
-  // rendered as children of LoadScript -> GoogleMap.
-  const UserMarkerIcon = {
-    path: (typeof window !== "undefined" && window.google && window.google.maps) ? window.google.maps.SymbolPath.CIRCLE : '', // Provide a fallback or ensure it's only used when google is ready
+  const UserMarkerIcon = (typeof window !== "undefined" && window.google && window.google.maps) ? {
+    path: window.google.maps.SymbolPath.CIRCLE,
     fillColor: 'hsl(var(--primary))',
     fillOpacity: 1,
     strokeColor: 'white',
     strokeWeight: 2,
     scale: 8,
-  };
+  } : undefined;
 
-  const DoctorMarkerIcon = {
-    path: (typeof window !== "undefined" && window.google && window.google.maps) ? window.google.maps.SymbolPath.CIRCLE : '', // Provide a fallback
+  const DoctorMarkerIcon = (typeof window !== "undefined" && window.google && window.google.maps) ? {
+    path: window.google.maps.SymbolPath.CIRCLE,
     fillColor: 'hsl(var(--accent))',
     fillOpacity: 0.9,
     strokeColor: 'white',
     strokeWeight: 1.5,
     scale: 7,
-  };
+  } : undefined;
 
   const handleLocationSuccess = useCallback(
     async (position: GeolocationPosition) => {
@@ -78,9 +74,15 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
   const handleLocationError = useCallback((err: GeolocationPositionError) => {
     console.warn(`Location error: ${err.code} - ${err.message}`);
     let friendlyMessage = 'Could not get your location. ';
-    if (err.code === 1) friendlyMessage += 'Permission denied. Please enable location services in your browser settings.';
-    else if (err.code === 2) friendlyMessage += 'Location information is unavailable.';
-    else friendlyMessage += 'Timeout trying to get location.';
+    if (err.code === 1) { // PERMISSION_DENIED
+        friendlyMessage += 'Permission denied. Please enable location services in your browser settings and for this site.';
+    } else if (err.code === 2) { // POSITION_UNAVAILABLE
+        friendlyMessage += 'Location information is unavailable. Please ensure location services are enabled on your device and browser, and that you have a stable internet connection. If you are indoors, try moving near a window or outdoors.';
+    } else if (err.code === 3) { // TIMEOUT
+        friendlyMessage += 'Timeout trying to get location. Please check your internet connection and try again.';
+    } else {
+        friendlyMessage += 'An unknown error occurred while trying to get your location.';
+    }
     setError(friendlyMessage);
     setLoadingLocation(false);
   }, []);
@@ -89,11 +91,12 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     setLoadingLocation(true);
     setError(null);
     setDoctors([]);
+    setSelectedDoctor(null); 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(handleLocationSuccess, handleLocationError, {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        timeout: 10000, // 10 seconds
+        maximumAge: 0, // Force fresh location
       });
     } else {
       setError('Geolocation is not supported by your browser.');
@@ -101,17 +104,10 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     }
   }, [handleLocationSuccess, handleLocationError]);
   
-  // useEffect(() => {
-  //   // Automatically request location on mount if not already set
-  //   // if (!location && !error && !loadingLocation) {
-  //   //    requestLocation(); // Option: Auto-request. Let's make it manual for now.
-  //   // }
-  // }, [location, error, loadingLocation, requestLocation]);
-
 
   return (
     <div className="space-y-6">
-      {!location && !loadingLocation && (
+      {!location && !loadingLocation && !error && (
         <Alert variant="default" className="border-primary/50 bg-primary/10">
           <MapPin className="h-5 w-5 text-primary" />
           <AlertTitle className="text-primary font-headline">Location Needed</AlertTitle>
@@ -134,9 +130,9 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
       {error && (
          <Alert variant="destructive">
           <AlertCircle className="h-5 w-5" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Location Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
-          {!loadingLocation && error.includes("Permission denied") && (
+          {!loadingLocation && (error.includes("Permission denied") || error.includes("Location information is unavailable") || error.includes("Timeout trying to get location")) && (
              <Button onClick={requestLocation} variant="outline" size="sm" className="mt-3">
                 Retry Location
              </Button>
@@ -150,16 +146,15 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
             mapContainerStyle={mapContainerStyle}
             center={mapCenter}
             zoom={doctors.length > 0 ? 13 : 10}
-            options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+            options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, zoomControl: true }}
             onLoad={(map) => {
                 // You can use the map instance here if needed, e.g. map.setOptions(...)
             }}
           >
-            {/* Conditional rendering for markers to ensure google object is available */}
-            { (typeof window !== "undefined" && window.google && window.google.maps && location) &&
+            { UserMarkerIcon && location &&
               <Marker position={location} title="Your Location" icon={UserMarkerIcon} />
             }
-            { (typeof window !== "undefined" && window.google && window.google.maps) && doctors.map((doctor) => (
+            { DoctorMarkerIcon && doctors.map((doctor) => (
               <Marker
                 key={doctor.id}
                 position={{ lat: doctor.lat, lng: doctor.lng }}
@@ -198,6 +193,16 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
         </div>
       )}
 
+      {!loadingLocation && !loadingDoctors && location && doctors.length === 0 && !error && (
+         <Alert variant="default">
+            <MapPin className="h-5 w-5" />
+            <AlertTitle>No Doctors Found</AlertTitle>
+            <AlertDescription>
+                We couldn't find any doctors within a 5km radius of your current location. You might want to try again or check a different area if possible.
+            </AlertDescription>
+        </Alert>
+      )}
+
       {!loadingDoctors && doctors.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold font-headline">Doctors Near You</h2>
@@ -216,7 +221,7 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
                   )}
                   {!doctor.photoUrl && (
                      <div className="aspect-video relative mb-2 rounded-md overflow-hidden bg-secondary flex items-center justify-center">
-                        <MapPin className="h-16 w-16 text-muted-foreground" data-ai-hint="medical building" />
+                        <MapPin className="h-16 w-16 text-muted-foreground" data-ai-hint="medical building default" />
                      </div>
                   )}
                   {doctor.rating && (
@@ -261,5 +266,3 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     </div>
   );
 }
-
-    
