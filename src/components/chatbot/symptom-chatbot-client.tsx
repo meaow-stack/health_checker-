@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { symptomChatbot, type SymptomChatbotOutput } from '@/ai/flows/symptom-chatbot';
-import { Bot, User, Loader2 } from 'lucide-react';
+import { Bot, User, Loader2, BotMessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SymptomFormSchema = z.object({
