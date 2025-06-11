@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import SymptomList from '@/components/tracking/symptom-list';
 import SymptomCharts from '@/components/tracking/symptom-charts';
 import type { SymptomLog } from '@/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info } from 'lucide-react';
+import { PlusCircle, Info, Activity } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
