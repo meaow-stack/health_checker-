@@ -80,16 +80,7 @@ export default function HomePage() {
                  </Link>
               </div>
             </div>
-            <div className="flex-1_ hidden md:block">
-              <Image 
-                src="https://placehold.co/600x400.png" 
-                alt="Health and wellness illustration"
-                data-ai-hint="health wellness" 
-                width={600} 
-                height={400}
-                className="rounded-lg shadow-md" 
-              />
-            </div>
+            {/* The div containing the placeholder image has been removed */}
           </div>
         </CardContent>
       </Card>
