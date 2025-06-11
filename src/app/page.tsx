@@ -53,7 +53,7 @@ export default function HomePage() {
               <CardTitle className="text-2xl font-headline">Your Health Journey, Simplified</CardTitle>
               <CardDescription className="text-md">
                 HealthWise Assistant is designed to empower you with information and tools.
-                Remember, our tools provide insights but do not replace professional medical advice.
+                Remember, our tools provide insights but WE do not replace professional medical advice. PLEASE SEEK MEDICAL ADVISE IF URGENT.
               </CardDescription>
             </div>
           </div>
