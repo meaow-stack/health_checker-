@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,7 +46,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-150px)] items-center justify-center">
+    <div className="container mx-auto flex flex-1 flex-col items-center justify-center">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />

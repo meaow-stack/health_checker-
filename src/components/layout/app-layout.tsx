@@ -112,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="font-semibold font-headline">HealthWise</span>
           </Link>
         </header>
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
+        <main className="flex flex-1 flex-col p-4 sm:p-6 md:p-8">
           {children}
         </main>
         <footer className="border-t p-4 text-center text-sm text-muted-foreground">
