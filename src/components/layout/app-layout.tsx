@@ -32,13 +32,14 @@ import {
   MessageSquareQuote,
   Info,
   Mail,
-  MapPin, // Added MapPin
+  MapPin, 
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { ThemeToggleButton } from '@/components/common/theme-toggle-button';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -46,7 +47,7 @@ const navItems = [
   { href: '/prediction', label: 'Disease Prediction', icon: ClipboardCheck },
   { href: '/tracking', label: 'Symptom Tracking', icon: Activity },
   { href: '/advice', label: 'Health Advice', icon: BookOpenText },
-  { href: '/find-doctors', label: 'Find Doctors', icon: MapPin }, // New item
+  { href: '/find-doctors', label: 'Find Doctors', icon: MapPin }, 
 ];
 
 const unauthenticatedNavItems = [
@@ -94,11 +95,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
-        <SidebarHeader className="p-4">
+        <SidebarHeader className="p-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <HeartPulse className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-semibold font-headline">HealthWise</h1>
           </Link>
+           <div className="md:hidden"> {/* Only show toggle on desktop in this position */}
+             <ThemeToggleButton />
+           </div>
         </SidebarHeader>
         <ScrollArea className="flex-1">
           <SidebarContent>
@@ -144,7 +148,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <Separator />
-        <SidebarFooter className="p-4">
+        <SidebarFooter className="p-4 space-y-3">
+          <div className="hidden md:flex justify-center"> {/* Center on desktop */}
+             <ThemeToggleButton />
+           </div>
           {loading ? (
             <div className="flex items-center space-x-2">
                <UserCircle className="h-5 w-5 text-muted-foreground" />
@@ -196,12 +203,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:h-16 sm:px-6 md:hidden">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:h-16 sm:px-6 md:hidden dark:bg-background/70">
           <SidebarTrigger />
           <Link href="/" className="flex items-center gap-2 md:hidden">
             <HeartPulse className="h-6 w-6 text-primary" />
             <span className="font-semibold font-headline">HealthWise</span>
           </Link>
+          <div className="ml-auto md:hidden"> {/* Show toggle on mobile in header */}
+            <ThemeToggleButton />
+          </div>
         </header>
         <main className="flex flex-1 flex-col p-4 sm:p-6 md:p-8">
           {children}

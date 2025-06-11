@@ -38,36 +38,35 @@ body {
     
     --radius: 0.5rem;
 
-    /* Chart colors - can be adjusted if specific chart colors are needed later */
-    --chart-1: 210 70% 50%; /* Primary */
-    --chart-2: 180 60% 60%; /* Accent */
-    --chart-3: 210 50% 60%; /* A lighter shade of primary */
-    --chart-4: 180 40% 70%; /* A lighter shade of accent */
-    --chart-5: 210 25% 45%; /* Foreground color (dark blue-gray) for contrast if needed */
+    /* Chart colors */
+    --chart-1: 210 70% 50%; 
+    --chart-2: 180 60% 60%; 
+    --chart-3: 210 50% 60%; 
+    --chart-4: 180 40% 70%; 
+    --chart-5: 210 25% 45%; 
 
-    /* Sidebar specific variables, harmonized with the theme */
-    --sidebar-background: 210 25% 97%; /* Slightly different from main background for distinction */
-    --sidebar-foreground: 210 25% 20%; /* Dark text for sidebar */
+    /* Sidebar specific variables */
+    --sidebar-background: 210 25% 97%; 
+    --sidebar-foreground: 210 25% 20%; 
     --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
-    --sidebar-accent: hsl(var(--accent)); /* Using main accent for sidebar states for consistency */
+    --sidebar-accent: hsl(var(--accent)); 
     --sidebar-accent-foreground: hsl(var(--accent-foreground));
-    --sidebar-border: 210 20% 88%; /* Border for sidebar elements */
-    --sidebar-ring: hsl(var(--ring)); /* Ring color for focus in sidebar */
+    --sidebar-border: 210 20% 88%; 
+    --sidebar-ring: hsl(var(--ring)); 
   }
 
   .dark {
-    /* Basic dark theme, can be expanded if dark mode is a future requirement */
     --background: 210 20% 10%;
     --foreground: 210 20% 95%;
 
     --card: 210 20% 12%;
     --card-foreground: 210 20% 95%;
 
-    --popover: 210 20% 12%;
+    --popover: 210 20% 12% / 0.85; /* Semi-transparent for blur */
     --popover-foreground: 210 20% 95%;
 
-    --primary: 210 70% 55%; /* Slightly lighter primary for dark mode */
+    --primary: 210 70% 55%; 
     --primary-foreground: 210 70% 10%;
 
     --secondary: 210 30% 20%;
@@ -76,7 +75,7 @@ body {
     --muted: 210 20% 25%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 180 60% 65%; /* Slightly lighter accent for dark mode */
+    --accent: 180 60% 65%; 
     --accent-foreground: 180 60% 10%;
 
     --destructive: 0 70% 55%;
@@ -92,12 +91,12 @@ body {
     --chart-4: 180 40% 60%;
     --chart-5: 210 20% 80%;
 
-    --sidebar-background: 210 25% 15%;
+    --sidebar-background: 210 25% 15% / 0.85; /* Semi-transparent for blur */
     --sidebar-foreground: 210 20% 90%;
     --sidebar-primary: hsl(var(--primary));
-    --sidebar-primary-foreground: hsl(var(--primary-foreground)); /* Check if this makes sense for dark */
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-accent: hsl(var(--accent));
-    --sidebar-accent-foreground: hsl(var(--accent-foreground)); /* Check for dark */
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
     --sidebar-border: 210 20% 28%;
     --sidebar-ring: hsl(var(--ring));
   }
