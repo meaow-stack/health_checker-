@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,25 +21,6 @@ const mapContainerStyle = {
   borderRadius: '0.5rem',
 };
 
-const UserMarkerIcon = {
-  path: google.maps.SymbolPath.CIRCLE,
-  fillColor: 'hsl(var(--primary))',
-  fillOpacity: 1,
-  strokeColor: 'white',
-  strokeWeight: 2,
-  scale: 8,
-};
-
-const DoctorMarkerIcon = {
-  path: google.maps.SymbolPath.CIRCLE, // Using a simple circle, can be customized
-  fillColor: 'hsl(var(--accent))',
-  fillOpacity: 0.9,
-  strokeColor: 'white',
-  strokeWeight: 1.5,
-  scale: 7,
-};
-
-
 export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -47,6 +29,28 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 37.0902, lng: -95.7129 }); // Default to US center
+
+  // Define icons inside the component.
+  // This ensures that `window.google` is more likely to be available
+  // when these objects are created, especially by the time they are used by Marker components
+  // rendered as children of LoadScript -> GoogleMap.
+  const UserMarkerIcon = {
+    path: (typeof window !== "undefined" && window.google && window.google.maps) ? window.google.maps.SymbolPath.CIRCLE : '', // Provide a fallback or ensure it's only used when google is ready
+    fillColor: 'hsl(var(--primary))',
+    fillOpacity: 1,
+    strokeColor: 'white',
+    strokeWeight: 2,
+    scale: 8,
+  };
+
+  const DoctorMarkerIcon = {
+    path: (typeof window !== "undefined" && window.google && window.google.maps) ? window.google.maps.SymbolPath.CIRCLE : '', // Provide a fallback
+    fillColor: 'hsl(var(--accent))',
+    fillOpacity: 0.9,
+    strokeColor: 'white',
+    strokeWeight: 1.5,
+    scale: 7,
+  };
 
   const handleLocationSuccess = useCallback(
     async (position: GeolocationPosition) => {
@@ -97,12 +101,12 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     }
   }, [handleLocationSuccess, handleLocationError]);
   
-  useEffect(() => {
-    // Automatically request location on mount if not already set
-    // if (!location && !error && !loadingLocation) {
-    //    requestLocation(); // Option: Auto-request. Let's make it manual for now.
-    // }
-  }, [location, error, loadingLocation, requestLocation]);
+  // useEffect(() => {
+  //   // Automatically request location on mount if not already set
+  //   // if (!location && !error && !loadingLocation) {
+  //   //    requestLocation(); // Option: Auto-request. Let's make it manual for now.
+  //   // }
+  // }, [location, error, loadingLocation, requestLocation]);
 
 
   return (
@@ -151,8 +155,11 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
                 // You can use the map instance here if needed, e.g. map.setOptions(...)
             }}
           >
-            <Marker position={location} title="Your Location" icon={UserMarkerIcon} />
-            {doctors.map((doctor) => (
+            {/* Conditional rendering for markers to ensure google object is available */}
+            { (typeof window !== "undefined" && window.google && window.google.maps && location) &&
+              <Marker position={location} title="Your Location" icon={UserMarkerIcon} />
+            }
+            { (typeof window !== "undefined" && window.google && window.google.maps) && doctors.map((doctor) => (
               <Marker
                 key={doctor.id}
                 position={{ lat: doctor.lat, lng: doctor.lng }}
@@ -254,3 +261,5 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     </div>
   );
 }
+
+    
