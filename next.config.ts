@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // experimental: {
+  //   fontLoaders: [ // This is deprecated, next/font handles this automatically
+  //     { loader: 'next/font/google', options: { subsets: ['latin'] } },
+  //   ],
+  // },
 };
 
 export default nextConfig;
