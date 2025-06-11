@@ -20,3 +20,16 @@ export interface SymptomFrequency {
   name: string;
   count: number;
 }
+
+export interface Doctor {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  photoUrl?: string;
+  rating?: number;
+  isOpen?: boolean | string; // Can be boolean or string like "UNKNOWN"
+  phoneNumber?: string;
+  website?: string;
+}

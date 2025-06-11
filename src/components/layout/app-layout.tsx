@@ -31,8 +31,8 @@ import {
   UserCircle,
   MessageSquareQuote,
   Info,
-  BadgeHelp,
   Mail,
+  MapPin, // Added MapPin
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
@@ -46,6 +46,7 @@ const navItems = [
   { href: '/prediction', label: 'Disease Prediction', icon: ClipboardCheck },
   { href: '/tracking', label: 'Symptom Tracking', icon: Activity },
   { href: '/advice', label: 'Health Advice', icon: BookOpenText },
+  { href: '/find-doctors', label: 'Find Doctors', icon: MapPin }, // New item
 ];
 
 const unauthenticatedNavItems = [
