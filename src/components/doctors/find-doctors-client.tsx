@@ -37,7 +37,7 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     strokeColor: 'white',
     strokeWeight: 2,
     scale: 8,
-  } : undefined;
+  } : { path: 'M 0, 0 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0', fillColor: 'hsl(var(--primary))', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2, scale: 1.6 };
 
   const DoctorMarkerIcon = (typeof window !== "undefined" && window.google && window.google.maps) ? {
     path: window.google.maps.SymbolPath.CIRCLE,
@@ -46,21 +46,22 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     strokeColor: 'white',
     strokeWeight: 1.5,
     scale: 7,
-  } : undefined;
+  } : { path: 'M 0, 0 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0', fillColor: 'hsl(var(--accent))', fillOpacity: 0.9, strokeColor: 'white', strokeWeight: 1.5, scale: 1.75 };
+
 
   const handleLocationSuccess = useCallback(
     async (position: GeolocationPosition) => {
       const { latitude, longitude } = position.coords;
       setLocation({ lat: latitude, lng: longitude });
       setMapCenter({ lat: latitude, lng: longitude });
-      setError(null);
+      setError(null); // Clear previous errors
       setLoadingDoctors(true);
+      setDoctors([]); // Clear previous doctor list
       try {
         const fetchedDoctors = await findNearbyDoctors(latitude, longitude);
         setDoctors(fetchedDoctors);
-        if (fetchedDoctors.length === 0) {
-          setError("No doctors found nearby. You might want to try a broader search or check your location.");
-        }
+        // No explicit error is set here if fetchedDoctors is empty.
+        // The JSX rendering will handle the "No doctors found" display.
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to fetch doctors.');
       } finally {
@@ -130,9 +131,9 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
       {error && (
          <Alert variant="destructive">
           <AlertCircle className="h-5 w-5" />
-          <AlertTitle>Location Error</AlertTitle>
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
-          {!loadingLocation && (error.includes("Permission denied") || error.includes("Location information is unavailable") || error.includes("Timeout trying to get location")) && (
+          {(!loadingLocation && (error.includes("Permission denied") || error.includes("Location information is unavailable") || error.includes("Timeout trying to get location") || error.includes("Geolocation is not supported"))) && (
              <Button onClick={requestLocation} variant="outline" size="sm" className="mt-3">
                 Retry Location
              </Button>
@@ -151,10 +152,10 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
                 // You can use the map instance here if needed, e.g. map.setOptions(...)
             }}
           >
-            { UserMarkerIcon && location &&
+            { UserMarkerIcon && location && (typeof window !== "undefined" && window.google && window.google.maps) &&
               <Marker position={location} title="Your Location" icon={UserMarkerIcon} />
             }
-            { DoctorMarkerIcon && doctors.map((doctor) => (
+            { DoctorMarkerIcon && (typeof window !== "undefined" && window.google && window.google.maps) && doctors.map((doctor) => (
               <Marker
                 key={doctor.id}
                 position={{ lat: doctor.lat, lng: doctor.lng }}
@@ -163,7 +164,7 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
                 onClick={() => setSelectedDoctor(doctor)}
               />
             ))}
-            {selectedDoctor && (
+            {selectedDoctor && (typeof window !== "undefined" && window.google && window.google.maps) && (
               <InfoWindow
                 position={{ lat: selectedDoctor.lat, lng: selectedDoctor.lng }}
                 onCloseClick={() => setSelectedDoctor(null)}
@@ -194,9 +195,9 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
       )}
 
       {!loadingLocation && !loadingDoctors && location && doctors.length === 0 && !error && (
-         <Alert variant="default">
-            <MapPin className="h-5 w-5" />
-            <AlertTitle>No Doctors Found</AlertTitle>
+         <Alert variant="default" className="border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700">
+            <MapPin className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+            <AlertTitle className="font-headline text-blue-700 dark:text-blue-300">No Doctors Found</AlertTitle>
             <AlertDescription>
                 We couldn't find any doctors within a 5km radius of your current location. You might want to try again or check a different area if possible.
             </AlertDescription>
@@ -266,3 +267,4 @@ export default function FindDoctorsClient({ apiKey }: FindDoctorsClientProps) {
     </div>
   );
 }
+
