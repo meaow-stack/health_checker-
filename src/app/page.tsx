@@ -82,7 +82,7 @@ export default function HomePage() {
             </div>
             <div className="flex-1 hidden md:block w-full md:w-auto"> {/* Ensure image container takes space */}
               <Image
-                src="https://placehold.co/600x400.png"
+                src="/image.png"
                 alt="Abstract health and technology"
                 data-ai-hint="health technology"
                 width={600}

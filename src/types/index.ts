@@ -1,3 +1,4 @@
+
 export interface SymptomLog {
   id: string; // Unique identifier for the log entry
   symptomName: string; // Name of the symptom, e.g., "Headache", "Fatigue"
@@ -32,4 +33,10 @@ export interface Doctor {
   isOpen?: boolean | string; // Can be boolean or string like "UNKNOWN"
   phoneNumber?: string;
   website?: string;
+}
+
+export interface Message {
+  id: string;
+  type: 'user' | 'ai';
+  text: string;
 }
