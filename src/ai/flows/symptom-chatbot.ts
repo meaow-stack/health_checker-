@@ -29,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'symptomChatbotPrompt',
   input: {schema: SymptomChatbotInputSchema},
   output: {schema: SymptomChatbotOutputSchema},
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are a medical assistant. Analyze the symptoms entered by the user and provide potential causes.
 
 Symptoms: {{{symptoms}}}`,
