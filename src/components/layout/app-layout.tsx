@@ -103,9 +103,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <HeartPulse className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-semibold font-headline">HealthWise</h1>
           </Link>
-           <div className="md:hidden"> {/* Only show toggle on desktop in this position */}
-             <ThemeToggleButton />
-           </div>
         </SidebarHeader>
         <ScrollArea className="flex-1">
           <SidebarContent>
@@ -152,7 +149,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <Separator />
         <SidebarFooter className="p-4 space-y-3">
-          <div className="hidden md:flex justify-center"> {/* Center on desktop */}
+          <div className="flex justify-center">
              <ThemeToggleButton />
            </div>
           {loading ? (
@@ -208,14 +205,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className={cn(isChatPage && 'flex flex-col h-screen')}>
         <header className={cn(
           "sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:h-16 sm:px-6 md:hidden dark:bg-background/70",
-          isChatPage && 'md:hidden' // Keep hidden on mobile for chat page
+          isChatPage && 'md:hidden'
         )}>
           <SidebarTrigger />
           <Link href="/" className="flex items-center gap-2 md:hidden">
             <HeartPulse className="h-6 w-6 text-primary" />
             <span className="font-semibold font-headline">HealthWise</span>
           </Link>
-          <div className="ml-auto md:hidden"> {/* Show toggle on mobile in header */}
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggleButton />
           </div>
         </header>

@@ -8,39 +8,39 @@ body {
 
 @layer base {
   :root {
-    --background: 210 20% 95%; /* #F0F8FA */
-    --foreground: 210 25% 25%; /* Dark Blue-Gray for text on background */
+    --background: 210 20% 98%;
+    --foreground: 210 25% 25%;
 
-    --card: 210 20% 100%; /* White */
+    --card: 210 20% 100%;
     --card-foreground: 210 25% 25%;
 
     --popover: 210 20% 100%;
     --popover-foreground: 210 25% 25%;
 
-    --primary: 210 70% 50%; /* #3399CC */
-    --primary-foreground: 210 70% 98%; /* Very Light Blue/White for text on primary */
+    --primary: 210 70% 55%;
+    --primary-foreground: 210 70% 98%;
 
-    --secondary: 210 30% 90%; /* Lighter Blue */
-    --secondary-foreground: 210 30% 20%; /* Darker for text on Lighter Blue */
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 210 30% 25%;
 
-    --muted: 210 20% 88%; /* For less important text/elements */
-    --muted-foreground: 210 20% 45%; /* Grayish Blue for muted text */
+    --muted: 210 20% 88%;
+    --muted-foreground: 210 20% 55%;
 
-    --accent: 180 60% 60%; /* #4DA6A6 */
-    --accent-foreground: 180 60% 98%; /* Very Light Teal/White for text on accent */
+    --accent: 180 60% 45%;
+    --accent-foreground: 180 60% 98%;
 
-    --destructive: 0 70% 50%; /* Standard red for destructive actions */
-    --destructive-foreground: 0 0% 98%; /* Light text for destructive background */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 210 20% 85%; /* Slightly darker than background for borders */
-    --input: 210 20% 90%; /* Input background, slightly different from border or background */
-    --ring: 210 70% 50%; /* Primary color for focus rings */
+    --border: 210 20% 88%;
+    --input: 210 20% 92%;
+    --ring: 210 70% 55%;
     
     --radius: 0.5rem;
 
     /* Chart colors */
     --chart-1: 210 70% 50%; 
-    --chart-2: 180 60% 60%; 
+    --chart-2: 180 60% 45%; 
     --chart-3: 210 50% 60%; 
     --chart-4: 180 40% 70%; 
     --chart-5: 210 25% 45%; 
@@ -57,41 +57,41 @@ body {
   }
 
   .dark {
-    --background: 210 20% 10%;
+    --background: 210 20% 12%;
     --foreground: 210 20% 95%;
 
-    --card: 210 20% 12%;
+    --card: 210 20% 15%;
     --card-foreground: 210 20% 95%;
 
-    --popover: 210 20% 12% / 0.85; /* Semi-transparent for blur */
+    --popover: 210 20% 12% / 0.9; 
     --popover-foreground: 210 20% 95%;
 
-    --primary: 210 70% 55%; 
+    --primary: 210 70% 60%; 
     --primary-foreground: 210 70% 10%;
 
-    --secondary: 210 30% 20%;
+    --secondary: 210 30% 22%;
     --secondary-foreground: 210 30% 90%;
 
     --muted: 210 20% 25%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 180 60% 65%; 
+    --accent: 180 60% 50%; 
     --accent-foreground: 180 60% 10%;
 
-    --destructive: 0 70% 55%;
+    --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 210 20% 30%;
     --input: 210 20% 28%;
-    --ring: 210 70% 55%;
+    --ring: 210 70% 60%;
     
     --chart-1: 210 70% 55%;
-    --chart-2: 180 60% 65%;
+    --chart-2: 180 60% 50%;
     --chart-3: 210 50% 50%;
     --chart-4: 180 40% 60%;
     --chart-5: 210 20% 80%;
 
-    --sidebar-background: 210 25% 15% / 0.85; /* Semi-transparent for blur */
+    --sidebar-background: 210 25% 15% / 0.9; 
     --sidebar-foreground: 210 20% 90%;
     --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
