@@ -31,7 +31,7 @@ type SymptomFormValues = z.infer<typeof SymptomFormSchema>;
 export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [saveChatHistory, setSaveChatHistory] = useState(false);
   
   const { toast } = useToast();
@@ -48,7 +48,6 @@ export default function SymptomChatbotClient() {
 
   // Effect to fetch history when user logs in and consents
   useEffect(() => {
-    // Only fetch history if there is a user and they've consented
     if (user && saveChatHistory) {
       setHistoryLoading(true);
       getChatHistory(user.uid)
@@ -67,9 +66,7 @@ export default function SymptomChatbotClient() {
           setHistoryLoading(false);
         });
     } else {
-      // If no user or no consent, clear messages and stop loading
-      setMessages([]);
-      setHistoryLoading(false);
+      setMessages([]); // Clear messages if user logs out or revokes consent
     }
   }, [user, saveChatHistory, toast]);
 
@@ -131,8 +128,8 @@ export default function SymptomChatbotClient() {
       form.handleSubmit(onSubmit)();
     }
   };
-
-  const isChatReady = !authLoading && !historyLoading;
+  
+  const isReady = !authLoading;
 
   return (
     <div className="flex flex-col h-full">
@@ -143,20 +140,20 @@ export default function SymptomChatbotClient() {
       />
       <Card className="flex flex-col flex-1 mx-6 mb-6 shadow-none border-none bg-transparent">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-           {!isChatReady && (
+           {historyLoading && (
              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="mt-2">Loading Chat...</p>
+              <p className="mt-2">Loading Chat History...</p>
             </div>
           )}
-          {isChatReady && messages.length === 0 && (
+          {!historyLoading && messages.length === 0 && (
              <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">HealthWise AI Assistant</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                  <p className="text-muted-foreground">
-                  Hello! How are you feeling today? You can tell me about your symptoms. For example, you could say: "I have a headache and a slight fever."
+                  Hello! I'm your friendly AI health assistant. How are you feeling today? You can tell me about your symptoms. For example: "I have a headache and a slight fever."
                 </p>
                  <div className="flex justify-center items-center gap-4">
                      <Link href="/prediction"><Button variant="outline">Predict a Disease</Button></Link>
@@ -222,7 +219,7 @@ export default function SymptomChatbotClient() {
                         {...field}
                         ref={textareaRef}
                         onKeyDown={handleKeyDown}
-                        disabled={!isChatReady || isLoading}
+                        disabled={!isReady || isLoading || historyLoading}
                         aria-label="Enter your symptoms"
                         rows={1}
                         className="min-h-[48px] resize-none pr-16"
@@ -232,7 +229,7 @@ export default function SymptomChatbotClient() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={!isChatReady || isLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
+              <Button type="submit" disabled={!isReady || isLoading || historyLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send</span>
               </Button>
