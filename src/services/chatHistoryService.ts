@@ -1,9 +1,10 @@
 
+'use client';
+
 import {
   collection,
   addDoc,
   query,
-  where,
   getDocs,
   orderBy,
   Timestamp,
@@ -19,14 +20,25 @@ const CHAT_HISTORY_COLLECTION = 'chatHistories';
 // Save a new chat message for a user
 export const saveChatMessage = async (userId: string, message: Message): Promise<void> => {
   try {
-    const userChatHistoryRef = collection(db, CHAT_HISTORY_COLLECTION, userId, 'messages');
-    await addDoc(userChatHistoryRef, {
+    // First, ensure the user's document exists in the chatHistories collection.
+    // Using setDoc with merge: true is a safe way to create it if it doesn't exist,
+    // or do nothing if it does.
+    const userDocRef = doc(db, CHAT_HISTORY_COLLECTION, userId);
+    await setDoc(userDocRef, { lastUpdated: Timestamp.now() }, { merge: true });
+
+    // Now, add the message to the 'messages' subcollection.
+    const messagesCollectionRef = collection(userDocRef, 'messages');
+    await addDoc(messagesCollectionRef, {
       ...message,
       timestamp: Timestamp.now(), // Add a server-side timestamp
     });
   } catch (error) {
     console.error('Error saving chat message:', error);
-    throw new Error('Could not save chat message.');
+    // Add more detailed error info for easier debugging in the browser console.
+    if (error instanceof Error) {
+        console.error("Firebase error details:", error.name, error.message, error.stack);
+    }
+    throw new Error('Could not save chat message. This might be due to Firestore security rules. Make sure you have configured them in your Firebase project console to allow writes to the chatHistories collection for authenticated users.');
   }
 };
 
@@ -51,6 +63,9 @@ export const getChatHistory = async (userId: string): Promise<Message[]> => {
     return messages;
   } catch (error) {
     console.error('Error getting chat history:', error);
-    throw new Error('Could not retrieve chat history.');
+     if (error instanceof Error) {
+        console.error("Firebase error details:", error.name, error.message, error.stack);
+    }
+    throw new Error('Could not retrieve chat history. This might be a Firestore security rules issue. Please check your Firebase project console.');
   }
 };
