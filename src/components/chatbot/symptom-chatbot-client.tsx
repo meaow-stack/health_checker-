@@ -12,10 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { symptomChatbot } from '@/ai/flows/symptom-chatbot';
-import { Bot, User, Loader2, Send, AlertTriangle } from 'lucide-react';
+import { Bot, User, Loader2, Send, AlertTriangle, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { saveChatMessage, getChatHistory } from '@/services/chatHistoryService';
 import type { Message } from '@/types';
@@ -31,8 +29,7 @@ type SymptomFormValues = z.infer<typeof SymptomFormSchema>;
 export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [saveChatHistory, setSaveChatHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -46,9 +43,9 @@ export default function SymptomChatbotClient() {
     },
   });
 
-  // Effect to fetch history when user logs in and consents
+  // Effect to fetch history when user is logged in
   useEffect(() => {
-    if (user && saveChatHistory) {
+    if (user) {
       setHistoryLoading(true);
       getChatHistory(user.uid)
         .then((history) => {
@@ -66,13 +63,14 @@ export default function SymptomChatbotClient() {
           setHistoryLoading(false);
         });
     } else {
-      setMessages([]); // Clear messages if user logs out or revokes consent
+      setMessages([]); // Clear messages if user logs out
+      setHistoryLoading(false);
     }
-  }, [user, saveChatHistory, toast]);
+  }, [user, toast]);
 
 
   const handleSaveMessage = (message: Message) => {
-    if (user && saveChatHistory) {
+    if (user) {
       // Don't wait for this to finish, do it in the background
       saveChatMessage(user.uid, message)
         .catch(error => {
@@ -104,7 +102,11 @@ export default function SymptomChatbotClient() {
 
     } catch (error) {
       console.error('Symptom Chatbot Error:', error);
-      const errorMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: "I'm sorry, I encountered an error. Please try again later." };
+      const errorMessageText = error instanceof Error && error.message.includes('429')
+        ? "I'm sorry, I'm a bit overwhelmed with requests right now. Please try again in a moment."
+        : "I'm sorry, I encountered an error. Please try again later.";
+      
+      const errorMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: errorMessageText };
       setMessages((prev) => [...prev, errorMessage]);
       toast({
         title: "Chatbot Error",
@@ -131,6 +133,79 @@ export default function SymptomChatbotClient() {
   
   const isReady = !authLoading;
 
+  const renderChatContent = () => {
+    if (historyLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="mt-2">Loading Chat History...</p>
+        </div>
+      );
+    }
+
+    if (messages.length === 0) {
+      return (
+        <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg bg-card">
+          <CardHeader>
+            <CardTitle className="font-headline text-2xl">HealthWise AI Assistant</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+              Hello! I'm your friendly AI health assistant. How are you feeling today? You can tell me about your symptoms. For example: "I have a headache and a slight fever."
+            </p>
+            <div className="flex justify-center items-center gap-4">
+                <Link href="/prediction"><Button variant="outline">Predict a Disease</Button></Link>
+                <Link href="/tracking"><Button variant="outline">Track Symptoms</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+       <div className="space-y-6">
+        {messages.map((msg, index) => (
+          <div
+            key={`${msg.id}-${index}`}
+            className={`flex items-start gap-4 ${
+              msg.type === 'user' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            {msg.type === 'ai' && (
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={20}/></AvatarFallback>
+              </Avatar>
+            )}
+            <div
+              className={`max-w-[75%] rounded-2xl p-4 shadow-md ${
+                msg.type === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-br-none'
+                  : 'bg-card text-card-foreground border rounded-bl-none'
+              }`}
+            >
+              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+            </div>
+            {msg.type === 'user' && (
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-accent text-accent-foreground"><User size={20}/></AvatarFallback>
+                </Avatar>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div className="flex items-start gap-4 justify-start">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={20}/></AvatarFallback>
+              </Avatar>
+            <div className="max-w-[75%] p-3 rounded-2xl shadow-md bg-card text-card-foreground border rounded-bl-none">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -140,70 +215,22 @@ export default function SymptomChatbotClient() {
       />
       <Card className="flex flex-col flex-1 mx-6 mb-6 shadow-none border-none bg-transparent">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-           {historyLoading && (
-             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="mt-2">Loading Chat History...</p>
-            </div>
-          )}
-          {!historyLoading && messages.length === 0 && (
-             <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg bg-card">
-              <CardHeader>
-                <CardTitle className="font-headline text-2xl">HealthWise AI Assistant</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <p className="text-muted-foreground">
-                  Hello! I'm your friendly AI health assistant. How are you feeling today? You can tell me about your symptoms. For example: "I have a headache and a slight fever."
-                </p>
-                 <div className="flex justify-center items-center gap-4">
-                     <Link href="/prediction"><Button variant="outline">Predict a Disease</Button></Link>
-                     <Link href="/tracking"><Button variant="outline">Track Symptoms</Button></Link>
-                 </div>
-              </CardContent>
-             </Card>
-          )}
-          <div className="space-y-6">
-            {messages.map((msg, index) => (
-              <div
-                key={`${msg.id}-${index}`}
-                className={`flex items-start gap-4 ${
-                  msg.type === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {msg.type === 'ai' && (
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={20}/></AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={`max-w-[75%] rounded-2xl p-4 shadow-md ${
-                    msg.type === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-none'
-                      : 'bg-card text-card-foreground border rounded-bl-none'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                </div>
-                {msg.type === 'user' && (
-                   <Avatar className="h-9 w-9">
-                     <AvatarFallback className="bg-accent text-accent-foreground"><User size={20}/></AvatarFallback>
-                   </Avatar>
-                )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-start gap-4 justify-start">
-                 <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={20}/></AvatarFallback>
-                  </Avatar>
-                <div className="max-w-[75%] p-3 rounded-2xl shadow-md bg-card text-card-foreground border rounded-bl-none">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              </div>
-            )}
-          </div>
+          {renderChatContent()}
         </ScrollArea>
         <div className="p-4 pt-0 border-t bg-background">
+          {!user && !authLoading && (
+            <Card className="mb-3 bg-secondary/50 border-secondary">
+              <CardContent className="p-3 flex items-center justify-center text-center gap-4">
+                <p className="text-sm text-secondary-foreground">
+                  <Link href="/auth/login" className="font-bold underline">Log in</Link> or <Link href="/auth/signup" className="font-bold underline">sign up</Link> to save your chat history.
+                </p>
+                <div className="flex gap-2">
+                   <Link href="/auth/login"><Button size="sm"><LogIn className="mr-2 h-4 w-4"/>Login</Button></Link>
+                   <Link href="/auth/signup"><Button size="sm" variant="outline"><UserPlus className="mr-2 h-4 w-4"/>Sign Up</Button></Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <div className="relative">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -225,7 +252,7 @@ export default function SymptomChatbotClient() {
                         className="min-h-[48px] resize-none pr-16"
                       />
                     </FormControl>
-                     <FormMessage className="absolute bottom-full mb-1" />
+                      <FormMessage className="absolute bottom-full mb-1" />
                   </FormItem>
                 )}
               />
@@ -236,18 +263,6 @@ export default function SymptomChatbotClient() {
             </form>
           </Form>
           </div>
-           {user && !authLoading && (
-                 <div className="flex items-center space-x-2 mt-3">
-                  <Checkbox 
-                    id="save-history" 
-                    checked={saveChatHistory}
-                    onCheckedChange={(checked) => setSaveChatHistory(checked as boolean)}
-                  />
-                  <Label htmlFor="save-history" className="text-xs font-normal text-muted-foreground leading-snug">
-                    Save my chat history for future sessions.
-                  </Label>
-                </div>
-            )}
             <p className="text-xs text-muted-foreground mt-3 text-center">
                 <AlertTriangle className="inline h-3 w-3 mr-1" />
                 This is not a diagnostic tool. Always consult a healthcare professional.
