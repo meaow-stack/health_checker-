@@ -7,7 +7,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -34,7 +34,6 @@ export default function SymptomChatbotClient() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<SymptomFormValues>({
     resolver: zodResolver(SymptomFormSchema),
@@ -62,44 +61,49 @@ export default function SymptomChatbotClient() {
         .finally(() => {
           setHistoryLoading(false);
         });
-    } else if (!authLoading) { // Only run if auth state is resolved
-      setMessages([]); // Clear messages if user logs out
+    } else if (!authLoading) {
+      setMessages([]); 
       setHistoryLoading(false);
     }
   }, [user, authLoading, toast]);
-
-
-  const handleSaveMessage = (message: Message) => {
-    if (!user) return; // Only save if user is logged in
-    
-    // Don't wait for this to finish, do it in the background
-    saveChatMessage(user.uid, message)
-      .catch(error => {
-          console.error("Failed to save message:", error);
-          toast({
-              title: "Save Error",
-              description: `Could not save message: ${error.message}.`,
-              variant: "destructive"
-          });
-      });
-  };
 
 
   const onSubmit: SubmitHandler<SymptomFormValues> = async (data) => {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
     
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    // Optimistically update UI
+    setMessages(prev => [...prev, userMessage]);
     form.reset();
 
-    handleSaveMessage(userMessage);
+    // Save user message in the background
+    if (user) {
+       saveChatMessage(user.uid, userMessage).catch(error => {
+            console.error("Failed to save user message:", error);
+            toast({
+                title: "Save Error",
+                description: `Could not save your message: ${error.message}.`,
+                variant: "destructive"
+            });
+       });
+    }
 
     try {
       const result = await symptomChatbot({ symptoms: data.symptoms });
       const aiMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: result.potentialCauses };
       setMessages(prev => [...prev, aiMessage]);
-      handleSaveMessage(aiMessage);
+      
+      // Save AI message in the background
+      if (user) {
+        saveChatMessage(user.uid, aiMessage).catch(error => {
+            console.error("Failed to save AI message:", error);
+            toast({
+                title: "Save Error",
+                description: `Could not save the bot's response: ${error.message}.`,
+                variant: "destructive"
+            });
+        });
+      }
 
     } catch (error) {
       console.error('Symptom Chatbot Error:', error);
@@ -135,7 +139,7 @@ export default function SymptomChatbotClient() {
   const isReady = !authLoading;
 
   const renderChatContent = () => {
-    if (authLoading || historyLoading) {
+    if (historyLoading) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -245,9 +249,8 @@ export default function SymptomChatbotClient() {
                       <Textarea
                         placeholder="e.g., I have a headache and a slight fever..."
                         {...field}
-                        ref={textareaRef}
                         onKeyDown={handleKeyDown}
-                        disabled={!isReady || isLoading || historyLoading || authLoading}
+                        disabled={!isReady || isLoading || historyLoading}
                         aria-label="Enter your symptoms"
                         rows={1}
                         className="min-h-[48px] resize-none pr-16"
@@ -257,7 +260,7 @@ export default function SymptomChatbotClient() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={!isReady || isLoading || historyLoading || authLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
+              <Button type="submit" disabled={!isReady || isLoading || historyLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send</span>
               </Button>
