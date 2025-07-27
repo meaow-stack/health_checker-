@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { symptomChatbot, type SymptomChatbotOutput } from '@/ai/flows/symptom-chatbot';
-import { Bot, User, Loader2, BotMessageSquare, ShieldQuestion } from 'lucide-react';
+import { Bot, User, Loader2, BotMessageSquare, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -31,7 +31,7 @@ export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [storePromptsAnonymously, setStorePromptsAnonymously] = useState(false);
+  const [saveChatHistory, setSaveChatHistory] = useState(false);
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -43,42 +43,55 @@ export default function SymptomChatbotClient() {
     },
   });
   
-  // Fetch chat history on mount if user is logged in
-  useEffect(() => {
-    if (user && !historyLoaded) {
-      const fetchHistory = async () => {
-        setIsLoading(true);
-        try {
-          const history = await getChatHistory(user.uid);
-          setMessages(history);
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "Could not load chat history.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-          setHistoryLoaded(true); // Mark history as loaded to prevent re-fetching
-        }
-      };
-      fetchHistory();
-    } else if (!user && !authLoading) {
-        // If there's no user and auth is not loading, we can consider history "loaded" (as empty)
+  const fetchHistory = useCallback(async () => {
+    if (user && saveChatHistory && !historyLoaded) {
+      setIsLoading(true);
+      try {
+        const history = await getChatHistory(user.uid);
+        setMessages(history);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not load chat history.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+        setHistoryLoaded(true);
+      }
+    } else {
         setHistoryLoaded(true);
     }
-  }, [user, historyLoaded, authLoading, toast]);
+  }, [user, saveChatHistory, historyLoaded, toast]);
+  
+  // Effect to handle fetching history when consent changes or user logs in.
+  useEffect(() => {
+    // If there's no user, or if auth is still loading, do nothing.
+    if (!user || authLoading) {
+      setHistoryLoaded(false); // Reset history loaded state if user logs out
+      setMessages([]); // Clear messages on logout
+      return;
+    };
+    
+    // If user is present and gives consent, fetch history.
+    if (saveChatHistory) {
+      fetchHistory();
+    } else {
+      // If consent is revoked, clear the messages and reset history loaded state
+      setMessages([]);
+      setHistoryLoaded(false);
+    }
+  }, [user, saveChatHistory, authLoading, fetchHistory]);
 
 
   const onSubmit: SubmitHandler<SymptomFormValues> = async (data) => {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages(prev => [...prev, userMessage]);
     form.reset();
 
-    // Persist user message if logged in
-    if (user) {
+    // Persist user message if logged in and consent is given
+    if (user && saveChatHistory) {
       await saveChatMessage(user.uid, userMessage);
     }
 
@@ -87,8 +100,8 @@ export default function SymptomChatbotClient() {
       const aiMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: result.potentialCauses };
       setMessages((prev) => [...prev, aiMessage]);
 
-       // Persist AI message if logged in
-      if (user) {
+       // Persist AI message if logged in and consent is given
+      if (user && saveChatHistory) {
         await saveChatMessage(user.uid, aiMessage);
       }
 
@@ -119,19 +132,17 @@ export default function SymptomChatbotClient() {
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] w-full p-4 border rounded-md mb-4 bg-muted/20" ref={scrollAreaRef}>
-          {(!historyLoaded || (isLoading && messages.length === 0)) && (
+          {(!historyLoaded && saveChatHistory) && (
              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="mt-2">
-                {user ? "Loading your chat history..." : "Loading chat..."}
-              </p>
+              <p className="mt-2">Loading your chat history...</p>
             </div>
           )}
           {historyLoaded && messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center p-4">
               <Bot size={48} className="mb-2" />
               <p>No messages yet. Start by typing your symptoms below.</p>
-              {user && <p className="text-xs mt-1">(Your conversation will be saved for next time.)</p>}
+              {user && !saveChatHistory && <p className="text-xs mt-1">(Check the box below to save and view your conversation history.)</p>}
             </div>
           )}
           {messages.map((msg, index) => (
@@ -185,7 +196,7 @@ export default function SymptomChatbotClient() {
                     <Input
                       placeholder="e.g., I have a headache and a slight fever..."
                       {...field}
-                      disabled={isLoading || !historyLoaded}
+                      disabled={isLoading || authLoading || (!!user && !historyLoaded)}
                       aria-label="Enter your symptoms"
                     />
                   </FormControl>
@@ -193,20 +204,20 @@ export default function SymptomChatbotClient() {
                 </FormItem>
               )}
             />
-            {!user && (
+            {user && (
                  <div className="flex items-center space-x-2 my-4 p-3 border rounded-md bg-background">
                   <Checkbox 
-                    id="anonymous-prompts" 
-                    checked={storePromptsAnonymously}
-                    onCheckedChange={(checked) => setStorePromptsAnonymously(checked as boolean)}
+                    id="save-history" 
+                    checked={saveChatHistory}
+                    onCheckedChange={(checked) => setSaveChatHistory(checked as boolean)}
                   />
-                  <Label htmlFor="anonymous-prompts" className="text-sm font-normal text-muted-foreground leading-snug">
-                    Allow HealthWise Assistant to store my prompts anonymously to help improve the service. Your personal data is never stored.
+                  <Label htmlFor="save-history" className="text-sm font-normal text-muted-foreground leading-snug">
+                    Save my chat history for future sessions.
                   </Label>
-                  <ShieldQuestion className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-auto" />
+                  <ShieldCheck className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-auto" />
                 </div>
             )}
-            <Button type="submit" disabled={isLoading || !historyLoaded} className="w-full">
+            <Button type="submit" disabled={isLoading || authLoading || (!!user && !historyLoaded)} className="w-full">
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BotMessageSquare className="mr-2 h-4 w-4" />}
               Send Symptoms
             </Button>
