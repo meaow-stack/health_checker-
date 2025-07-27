@@ -41,7 +41,6 @@ const prompt = ai.definePrompt({
   name: 'predictDiseasePrompt',
   input: {schema: PredictDiseaseInputSchema},
   output: {schema: PredictDiseaseOutputSchema},
-  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are an AI health assistant that can predict possible diseases based on the symptoms a user provides.
 
   Analyze the symptoms provided by the user and predict possible diseases.

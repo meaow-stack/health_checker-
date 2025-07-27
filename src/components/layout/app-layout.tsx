@@ -40,6 +40,7 @@ import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ThemeToggleButton } from '@/components/common/theme-toggle-button';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -91,6 +92,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (names.length === 1) return names[0]!.charAt(0).toUpperCase();
     return names[0]!.charAt(0).toUpperCase() + names[names.length - 1]!.charAt(0).toUpperCase();
   };
+  
+  const isChatPage = pathname === '/chatbot';
 
   return (
     <SidebarProvider defaultOpen>
@@ -202,8 +205,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:h-16 sm:px-6 md:hidden dark:bg-background/70">
+      <SidebarInset className={cn(isChatPage && 'flex flex-col h-screen')}>
+        <header className={cn(
+          "sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md sm:h-16 sm:px-6 md:hidden dark:bg-background/70",
+          isChatPage && 'md:hidden' // Keep hidden on mobile for chat page
+        )}>
           <SidebarTrigger />
           <Link href="/" className="flex items-center gap-2 md:hidden">
             <HeartPulse className="h-6 w-6 text-primary" />
@@ -213,12 +219,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <ThemeToggleButton />
           </div>
         </header>
-        <main className="flex flex-1 flex-col p-4 sm:p-6 md:p-8">
+        <main className={cn(
+            "flex flex-1 flex-col",
+            !isChatPage && "p-4 sm:p-6 md:p-8"
+        )}>
           {children}
         </main>
-        <footer className="border-t p-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} HealthWise Assistant. All rights reserved.
-        </footer>
+        {!isChatPage && (
+            <footer className="border-t p-4 text-center text-sm text-muted-foreground">
+                © {new Date().getFullYear()} HealthWise Assistant. All rights reserved.
+            </footer>
+        )}
       </SidebarInset>
     </SidebarProvider>
   );
