@@ -1,21 +1,21 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { symptomChatbot, type SymptomChatbotOutput } from '@/ai/flows/symptom-chatbot';
-import { Bot, User, Loader2, Send, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { symptomChatbot } from '@/ai/flows/symptom-chatbot';
+import { Bot, User, Loader2, Send, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import { saveChatMessage, getChatHistory } from '@/services/chatHistoryService';
 import type { Message } from '@/types';
@@ -31,7 +31,7 @@ type SymptomFormValues = z.infer<typeof SymptomFormSchema>;
 export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [saveChatHistory, setSaveChatHistory] = useState(false);
   
   const { toast } = useToast();
@@ -48,17 +48,18 @@ export default function SymptomChatbotClient() {
 
   // Effect to fetch history when user logs in and consents
   useEffect(() => {
+    // Only fetch history if there is a user and they've consented
     if (user && saveChatHistory) {
       setHistoryLoading(true);
-      setMessages([]); // Clear previous messages before loading new history
       getChatHistory(user.uid)
         .then((history) => {
           setMessages(history);
         })
         .catch((error) => {
+          console.error("Error loading history:", error);
           toast({
             title: "Error Loading History",
-            description: error instanceof Error ? error.message : "Could not load chat history.",
+            description: "Could not load your previous chat history. Please try again later.",
             variant: "destructive",
           });
         })
@@ -66,19 +67,22 @@ export default function SymptomChatbotClient() {
           setHistoryLoading(false);
         });
     } else {
-      // Clear messages if user logs out or revokes consent
+      // If no user or no consent, clear messages and stop loading
       setMessages([]);
+      setHistoryLoading(false);
     }
   }, [user, saveChatHistory, toast]);
 
+
   const handleSaveMessage = (message: Message) => {
     if (user && saveChatHistory) {
+      // Don't wait for this to finish, do it in the background
       saveChatMessage(user.uid, message)
         .catch(error => {
             console.error("Failed to save message:", error);
             toast({
                 title: "Save Error",
-                description: `Could not save message: ${error.message}. Check Firestore rules.`,
+                description: `Could not save message: ${error.message}. This might be a Firestore rules issue.`,
                 variant: "destructive"
             });
         });
@@ -90,15 +94,13 @@ export default function SymptomChatbotClient() {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
     
-    // Optimistically update the UI with the user's message
     setMessages(prev => [...prev, userMessage]);
     form.reset();
 
-    // Save the message in the background
     handleSaveMessage(userMessage);
 
     try {
-      const result: SymptomChatbotOutput = await symptomChatbot({ symptoms: data.symptoms });
+      const result = await symptomChatbot({ symptoms: data.symptoms });
       const aiMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: result.potentialCauses };
       setMessages(prev => [...prev, aiMessage]);
       handleSaveMessage(aiMessage);
@@ -109,7 +111,7 @@ export default function SymptomChatbotClient() {
       setMessages((prev) => [...prev, errorMessage]);
       toast({
         title: "Chatbot Error",
-        description: "Failed to get a response from the chatbot. Please check your connection or try again.",
+        description: error instanceof Error ? error.message : "Failed to get a response from the chatbot.",
         variant: "destructive",
       });
     } finally {
@@ -130,6 +132,8 @@ export default function SymptomChatbotClient() {
     }
   };
 
+  const isChatReady = !authLoading && !historyLoading;
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -139,24 +143,24 @@ export default function SymptomChatbotClient() {
       />
       <Card className="flex flex-col flex-1 mx-6 mb-6 shadow-none border-none bg-transparent">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-           {historyLoading && (
+           {!isChatReady && (
              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="mt-2">Loading your chat history...</p>
+              <p className="mt-2">Loading Chat...</p>
             </div>
           )}
-          {!historyLoading && messages.length === 0 && (
-             <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg">
+          {isChatReady && messages.length === 0 && (
+             <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg bg-card">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">HealthWise AI Assistant</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                  <p className="text-muted-foreground">
-                  Start a conversation by typing your symptoms below. For example: "I have a headache and a slight fever."
+                  Hello! How are you feeling today? You can tell me about your symptoms. For example, you could say: "I have a headache and a slight fever."
                 </p>
                  <div className="flex justify-center items-center gap-4">
-                     <Link href="/prediction"><Button variant="outline">Disease Predictor</Button></Link>
-                     <Link href="/tracking"><Button variant="outline">Symptom Tracker</Button></Link>
+                     <Link href="/prediction"><Button variant="outline">Predict a Disease</Button></Link>
+                     <Link href="/tracking"><Button variant="outline">Track Symptoms</Button></Link>
                  </div>
               </CardContent>
              </Card>
@@ -190,7 +194,7 @@ export default function SymptomChatbotClient() {
                 )}
               </div>
             ))}
-            {isLoading && messages.length > 0 && (
+            {isLoading && (
               <div className="flex items-start gap-4 justify-start">
                  <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={20}/></AvatarFallback>
@@ -218,7 +222,7 @@ export default function SymptomChatbotClient() {
                         {...field}
                         ref={textareaRef}
                         onKeyDown={handleKeyDown}
-                        disabled={isLoading || authLoading || (user && historyLoading)}
+                        disabled={!isChatReady || isLoading}
                         aria-label="Enter your symptoms"
                         rows={1}
                         className="min-h-[48px] resize-none pr-16"
@@ -228,7 +232,7 @@ export default function SymptomChatbotClient() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading || authLoading || (user && historyLoading)} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
+              <Button type="submit" disabled={!isChatReady || isLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send</span>
               </Button>

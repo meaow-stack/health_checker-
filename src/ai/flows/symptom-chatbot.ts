@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -30,9 +31,13 @@ const prompt = ai.definePrompt({
   input: {schema: SymptomChatbotInputSchema},
   output: {schema: SymptomChatbotOutputSchema},
   model: 'googleai/gemini-1.5-flash-latest',
-  prompt: `You are a medical assistant. Analyze the symptoms entered by the user and provide potential causes.
+  prompt: `You are a friendly and empathetic AI health assistant called HealthWise. Your goal is to help users understand potential causes for their symptoms based on the information they provide.
 
-Symptoms: {{{symptoms}}}`,
+IMPORTANT: You are not a doctor. Always end your response with a clear and friendly disclaimer reminding the user to consult a healthcare professional for a real diagnosis.
+
+Analyze the user's symptoms and provide a helpful, conversational response outlining potential causes.
+
+User's symptoms: {{{symptoms}}}`,
 });
 
 const symptomChatbotFlow = ai.defineFlow(
