@@ -31,8 +31,9 @@ type SymptomFormValues = z.infer<typeof SymptomFormSchema>;
 export default function SymptomChatbotClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [saveChatHistory, setSaveChatHistory] = useState(false);
+  
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -45,46 +46,33 @@ export default function SymptomChatbotClient() {
     },
   });
 
-  const fetchHistory = useCallback(async () => {
-    if (user && saveChatHistory && !historyLoaded) {
-      setIsLoading(true);
-      try {
-        const history = await getChatHistory(user.uid);
-        setMessages(history);
-      } catch (error) {
-        toast({
-          title: "Error Loading History",
-          description: error instanceof Error ? error.message : "Could not load chat history.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-        setHistoryLoaded(true);
-      }
-    } else {
-        setHistoryLoaded(true);
-    }
-  }, [user, saveChatHistory, historyLoaded, toast]);
-  
+  // Effect to fetch history when user logs in and consents
   useEffect(() => {
-    if (!user || authLoading) {
-      setHistoryLoaded(false);
-      setMessages([]);
-      return;
-    };
-    
-    if (saveChatHistory) {
-      fetchHistory();
+    if (user && saveChatHistory) {
+      setHistoryLoading(true);
+      setMessages([]); // Clear previous messages before loading new history
+      getChatHistory(user.uid)
+        .then((history) => {
+          setMessages(history);
+        })
+        .catch((error) => {
+          toast({
+            title: "Error Loading History",
+            description: error instanceof Error ? error.message : "Could not load chat history.",
+            variant: "destructive",
+          });
+        })
+        .finally(() => {
+          setHistoryLoading(false);
+        });
     } else {
+      // Clear messages if user logs out or revokes consent
       setMessages([]);
-      setHistoryLoaded(false);
     }
-  }, [user, saveChatHistory, authLoading, fetchHistory]);
-
+  }, [user, saveChatHistory, toast]);
 
   const handleSaveMessage = (message: Message) => {
     if (user && saveChatHistory) {
-      // Don't await this, let it run in the background
       saveChatMessage(user.uid, message)
         .catch(error => {
             console.error("Failed to save message:", error);
@@ -101,10 +89,12 @@ export default function SymptomChatbotClient() {
   const onSubmit: SubmitHandler<SymptomFormValues> = async (data) => {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    
+    // Optimistically update the UI with the user's message
+    setMessages(prev => [...prev, userMessage]);
     form.reset();
 
+    // Save the message in the background
     handleSaveMessage(userMessage);
 
     try {
@@ -149,13 +139,13 @@ export default function SymptomChatbotClient() {
       />
       <Card className="flex flex-col flex-1 mx-6 mb-6 shadow-none border-none bg-transparent">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-           {(!historyLoaded && saveChatHistory) && (
+           {historyLoading && (
              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin" />
               <p className="mt-2">Loading your chat history...</p>
             </div>
           )}
-          {historyLoaded && messages.length === 0 && (
+          {!historyLoading && messages.length === 0 && (
              <Card className="w-full max-w-lg mx-auto mt-10 p-6 text-center shadow-lg">
               <CardHeader>
                 <CardTitle className="font-headline text-2xl">HealthWise AI Assistant</CardTitle>
@@ -228,7 +218,7 @@ export default function SymptomChatbotClient() {
                         {...field}
                         ref={textareaRef}
                         onKeyDown={handleKeyDown}
-                        disabled={isLoading || authLoading || (!!user && !historyLoaded)}
+                        disabled={isLoading || authLoading || (user && historyLoading)}
                         aria-label="Enter your symptoms"
                         rows={1}
                         className="min-h-[48px] resize-none pr-16"
@@ -238,14 +228,14 @@ export default function SymptomChatbotClient() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading || authLoading || (!!user && !historyLoaded)} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
+              <Button type="submit" disabled={isLoading || authLoading || (user && historyLoading)} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send</span>
               </Button>
             </form>
           </Form>
           </div>
-           {user && (
+           {user && !authLoading && (
                  <div className="flex items-center space-x-2 mt-3">
                   <Checkbox 
                     id="save-history" 
