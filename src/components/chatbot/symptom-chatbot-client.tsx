@@ -53,8 +53,8 @@ export default function SymptomChatbotClient() {
         setMessages(history);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Could not load chat history.",
+          title: "Error Loading History",
+          description: error instanceof Error ? error.message : "Could not load chat history.",
           variant: "destructive",
         });
       } finally {
@@ -82,6 +82,22 @@ export default function SymptomChatbotClient() {
   }, [user, saveChatHistory, authLoading, fetchHistory]);
 
 
+  const handleSaveMessage = (message: Message) => {
+    if (user && saveChatHistory) {
+      // Don't await this, let it run in the background
+      saveChatMessage(user.uid, message)
+        .catch(error => {
+            console.error("Failed to save message:", error);
+            toast({
+                title: "Save Error",
+                description: `Could not save message: ${error.message}. Check Firestore rules.`,
+                variant: "destructive"
+            });
+        });
+    }
+  };
+
+
   const onSubmit: SubmitHandler<SymptomFormValues> = async (data) => {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
@@ -89,25 +105,20 @@ export default function SymptomChatbotClient() {
     setMessages(newMessages);
     form.reset();
 
-    if (user && saveChatHistory) {
-      await saveChatMessage(user.uid, userMessage);
-    }
+    handleSaveMessage(userMessage);
 
     try {
       const result: SymptomChatbotOutput = await symptomChatbot({ symptoms: data.symptoms });
       const aiMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: result.potentialCauses };
       setMessages(prev => [...prev, aiMessage]);
-
-      if (user && saveChatHistory) {
-        await saveChatMessage(user.uid, aiMessage);
-      }
+      handleSaveMessage(aiMessage);
 
     } catch (error) {
       console.error('Symptom Chatbot Error:', error);
       const errorMessage: Message = { id: (Date.now() + 1).toString(), type: 'ai', text: "I'm sorry, I encountered an error. Please try again later." };
       setMessages((prev) => [...prev, errorMessage]);
       toast({
-        title: "Error",
+        title: "Chatbot Error",
         description: "Failed to get a response from the chatbot. Please check your connection or try again.",
         variant: "destructive",
       });
