@@ -62,26 +62,26 @@ export default function SymptomChatbotClient() {
         .finally(() => {
           setHistoryLoading(false);
         });
-    } else {
+    } else if (!authLoading) { // Only run if auth state is resolved
       setMessages([]); // Clear messages if user logs out
       setHistoryLoading(false);
     }
-  }, [user, toast]);
+  }, [user, authLoading, toast]);
 
 
   const handleSaveMessage = (message: Message) => {
-    if (user) {
-      // Don't wait for this to finish, do it in the background
-      saveChatMessage(user.uid, message)
-        .catch(error => {
-            console.error("Failed to save message:", error);
-            toast({
-                title: "Save Error",
-                description: `Could not save message: ${error.message}. This might be a Firestore rules issue.`,
-                variant: "destructive"
-            });
-        });
-    }
+    if (!user) return; // Only save if user is logged in
+    
+    // Don't wait for this to finish, do it in the background
+    saveChatMessage(user.uid, message)
+      .catch(error => {
+          console.error("Failed to save message:", error);
+          toast({
+              title: "Save Error",
+              description: `Could not save message: ${error.message}.`,
+              variant: "destructive"
+          });
+      });
   };
 
 
@@ -89,7 +89,8 @@ export default function SymptomChatbotClient() {
     setIsLoading(true);
     const userMessage: Message = { id: Date.now().toString(), type: 'user', text: data.symptoms };
     
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     form.reset();
 
     handleSaveMessage(userMessage);
@@ -134,7 +135,7 @@ export default function SymptomChatbotClient() {
   const isReady = !authLoading;
 
   const renderChatContent = () => {
-    if (historyLoading) {
+    if (authLoading || historyLoading) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -246,7 +247,7 @@ export default function SymptomChatbotClient() {
                         {...field}
                         ref={textareaRef}
                         onKeyDown={handleKeyDown}
-                        disabled={!isReady || isLoading || historyLoading}
+                        disabled={!isReady || isLoading || historyLoading || authLoading}
                         aria-label="Enter your symptoms"
                         rows={1}
                         className="min-h-[48px] resize-none pr-16"
@@ -256,7 +257,7 @@ export default function SymptomChatbotClient() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={!isReady || isLoading || historyLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
+              <Button type="submit" disabled={!isReady || isLoading || historyLoading || authLoading} className="absolute right-2 top-1/2 -translate-y-1/2" size="icon">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send</span>
               </Button>
