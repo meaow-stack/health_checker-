@@ -28,9 +28,9 @@ This project empowers users to better understand their health while demonstratin
 - **Frontend**: Next.js (React), Tailwind CSS / CSS Modules
 - **Backend**: Next.js API routes (Node.js + Express-like structure)
 - **AI/NLP**: Hugging Face Transformers (BERT, Med7, ClinicalBERT)
-- **Data Storage**: MongoDB / PostgreSQL / SQLite (based on your setup)
+- **Data Storage**: MongoDB / PostgreSQL / SQLite / Firestore (based on your setup)
 - **Auth**: JWT / NextAuth.js
-- **State Management**: React Context / Zustand / Redux (optional)
+- **State Management**: Nextjs(React) Context / Zustand / Redux (optional)
 
 ---
 
